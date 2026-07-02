@@ -1,0 +1,165 @@
+INICIO
+
+    DEFINIR TRIG_PIN1 COMO 2
+    DEFINIR ECHO_PIN1 COMO 4
+
+    DEFINIR TRIG_PIN2 COMO 7
+    DEFINIR ECHO_PIN2 COMO 8
+
+    DEFINIR TRIG_PIN3 COMO 12
+    DEFINIR ECHO_PIN3 COMO 13
+
+    DEFINIR ENA COMO 11
+    DEFINIR IN3 COMO 10
+    DEFINIR IN4 COMO 9
+
+    DEFINIR SERVOPIN COMO 6
+
+    DEFINIR velocidad COMO 255
+    DEFINIR velocidadRetroceso COMO 255
+    DEFINIR velocidadGiro COMO 200
+
+    INICIALIZAR myServo
+
+    FUNCION moveForward()
+        ESTABLECER myServo A 90°
+        ESTABLECER IN3 A ALTO
+        ESTABLECER IN4 A BAJO
+        AJUSTAR ENA A velocidad
+    FIN FUNCION
+
+    FUNCION moveBack()
+        ESTABLECER myServo A 90°
+        ESTABLECER IN3 A BAJO
+        ESTABLECER IN4 A ALTO
+        AJUSTAR ENA A velocidadRetroceso
+    FIN FUNCION
+
+    FUNCION stop()
+        ESTABLECER IN3 A BAJO
+        ESTABLECER IN4 A BAJO
+        AJUSTAR ENA A 0
+    FIN FUNCION
+
+    FUNCION turnRight()
+        ESTABLECER myServo A 180°
+        ESTABLECER IN3 A ALTO
+        ESTABLECER IN4 A BAJO
+        AJUSTAR ENA A velocidadGiro
+    FIN FUNCION
+
+    FUNCION turnLeft()
+        ESTABLECER myServo A 0°
+        ESTABLECER IN3 A ALTO
+        ESTABLECER IN4 A BAJO
+        AJUSTAR ENA A velocidadGiro
+    FIN FUNCION
+
+    FUNCION leerSensores()
+
+        LEER distancia del sensor derecho
+        GUARDAR EN der
+
+        LEER distancia del sensor frontal
+        GUARDAR EN cen
+
+        LEER distancia del sensor izquierdo
+        GUARDAR EN izq
+
+        MOSTRAR der, cen E izq
+
+    FIN FUNCION
+
+    INICIALIZAR comunicación serial
+
+    CONFIGURAR los pines de los sensores
+
+    CONFIGURAR los pines del controlador L298N
+
+    CONECTAR el servomotor
+
+    COLOCAR el servo a 90°
+
+    LLAMAR moveForward()
+
+    MIENTRAS VERDADERO
+
+        LLAMAR leerSensores()
+
+        SI cen < 15
+
+            LLAMAR stop()
+
+            ESPERAR 1000 ms
+
+            LLAMAR moveBack()
+
+            ESPERAR 1300 ms
+
+            LLAMAR stop()
+
+            ESPERAR 500 ms
+
+            SI izq > der
+
+                LLAMAR turnLeft()
+
+                ESPERAR 800 ms
+
+            SINO SI der > izq
+
+                LLAMAR turnRight()
+
+                ESPERAR 800 ms
+
+            SINO
+
+                LLAMAR turnLeft()
+
+                ESPERAR 800 ms
+
+            FIN SI
+
+        SINO SI cen >= 15 Y cen <= 50
+
+            SI izq > der
+
+                LLAMAR turnLeft()
+
+                ESPERAR 900 ms
+
+            SINO SI der > izq
+
+                LLAMAR turnRight()
+
+                ESPERAR 800 ms
+
+            SINO
+
+                LLAMAR moveForward()
+
+            FIN SI
+
+        SINO SI der < 20
+
+            LLAMAR turnLeft()
+
+            ESPERAR 800 ms
+
+        SINO SI izq < 20
+
+            LLAMAR turnRight()
+
+            ESPERAR 800 ms
+
+        SINO
+
+            LLAMAR moveForward()
+
+        FIN SI
+
+        ESPERAR 100 ms
+
+    FIN MIENTRAS
+
+FIN
