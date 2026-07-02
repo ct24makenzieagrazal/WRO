@@ -1,0 +1,172 @@
+#include <Servo.h>
+#include <Arduino.h>
+
+const int TRIG_PIN1 = 2; // Sensor derecho
+const int ECHO_PIN1 = 4;
+
+const int TRIG_PIN2 = 7; // Sensor central
+const int ECHO_PIN2 = 8;
+
+const int TRIG_PIN3 = 12; // Sensor izquierdo
+const int ECHO_PIN3 = 13;
+
+long duration1, duration2, duration3;
+float der, cen, izq;
+
+const int ENA = 11; // L298N
+const int IN3 = 10;
+const int IN4 = 9;
+
+const int SERVOPIN = 6; // Servo motor
+
+int vel = 255;  
+int velRetroceso = 255;
+int velGiro = 200;
+
+Servo myServo;
+
+void moveForward() {
+  myServo.write(90);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(ENA, vel);
+}
+
+void moveBack() {
+  Serial.print("Reversa");
+  myServo.write(90);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(ENA, velRetroceso);
+}
+
+void stop() {
+  Serial.print("detenido");
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  analogWrite(ENA, 0);
+}
+
+void turnRight() {
+  Serial.print("giro drecha");
+  myServo.write(180);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(ENA, velGiro);
+}
+
+void turnLeft() {
+  Serial.print("giro izquierda");
+  stop();
+  myServo.write(0);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(ENA, velGiro);
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(TRIG_PIN1, OUTPUT);
+  pinMode(ECHO_PIN1, INPUT);
+
+  pinMode(TRIG_PIN2, OUTPUT);
+  pinMode(ECHO_PIN2, INPUT);
+
+  pinMode(TRIG_PIN3, OUTPUT);
+  pinMode(ECHO_PIN3, INPUT);
+
+  pinMode(ENA, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  myServo.attach(SERVOPIN);
+
+  myServo.write(90);
+  moveForward();
+}
+
+void loop() {
+
+  digitalWrite(TRIG_PIN1, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN1, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN1, LOW);
+  duration1 = pulseIn(ECHO_PIN1, HIGH);
+  der = duration1 * 0.034 / 2;
+
+  digitalWrite(TRIG_PIN2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN2, LOW);
+  duration2 = pulseIn(ECHO_PIN2, HIGH);
+  cen = duration2 * 0.034 / 2;
+
+  digitalWrite(TRIG_PIN3, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN3, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN3, LOW);
+  duration3 = pulseIn(ECHO_PIN3, HIGH);
+  izq = duration3 * 0.034 / 2;
+
+  Serial.print("Sensor derecho: ");
+  Serial.print(der);
+  Serial.print(" cm | Sensor Frontal: ");
+  Serial.print(cen);
+  Serial.print(" cm | Sensor Izquierdo: ");
+  Serial.print(izq);
+  Serial.println(" cm");
+
+  delay(500);
+
+  if (cen < 15) {
+    stop();
+    delay(1000);
+    moveBack();
+    delay(1300);
+    stop();
+    delay(500);
+
+    if (izq > der) {
+      turnLeft();
+      delay(800);
+    }
+    else if (der > izq) {
+      turnRight();
+      delay(800);
+    }
+    else {
+      turnLeft();
+      delay(800);
+    }
+  }
+  else if (cen <= 50 && cen >= 15) {
+    if (izq > der) {
+      turnLeft();
+      delay(900);
+    }
+    else if (der > izq) {
+      turnRight();
+      delay(800);
+    }
+    else {
+      moveForward();
+    }
+  }
+  else if (der < 20) {
+    turnLeft();
+    delay(800);
+  }
+  else if (izq < 20) {
+    turnRight();
+    delay(800);
+  }
+  else {
+    moveForward();
+  }
+
+  delay(100);
+}
