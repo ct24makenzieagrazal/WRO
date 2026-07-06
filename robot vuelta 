@@ -1,0 +1,109 @@
+#include <Servo.h>
+#include <Arduino.h>
+
+const int TRIG_DER = 2;
+const int ECHO_DER = 4;
+
+const int TRIG_IZQ = 12;
+const int ECHO_IZQ = 13;
+
+long duracionDer, duracionIzq;
+float der, izq;
+
+const int ENA = 11;
+const int IN3 = 10;
+const int IN4 = 9;
+
+const int SERVOPIN = 6;
+Servo myServo;
+
+int velArranque = 110;
+int velRecta = 255;
+int velCurva = 190;
+
+int anguloRecto = 90;
+int anguloIzq  = 50;
+int anguloDer  = 130;
+
+float UMBRAL_GIRO = 40;
+float MARGEN_DIFERENCIA = 15;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(TRIG_DER, OUTPUT);
+  pinMode(ECHO_DER, INPUT);
+
+  pinMode(TRIG_IZQ, OUTPUT);
+  pinMode(ECHO_IZQ, INPUT);
+
+  pinMode(ENA, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  myServo.attach(SERVOPIN);
+  myServo.write(anguloRecto);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(ENA, velArranque);
+  
+  delay(1000);
+}
+
+float leerDistancia(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duracion = pulseIn(echoPin, HIGH, 25000);
+  if (duracion == 0) return 0;
+  return duracion * 0.034 / 2;
+}
+
+void irRecto() {
+  myServo.write(anguloRecto);
+  analogWrite(ENA, velRecta);
+}
+
+void girarIzquierda() {
+  myServo.write(anguloIzq);
+  analogWrite(ENA, velCurva);
+}
+
+void girarDerecha() {
+  myServo.write(anguloDer);
+  analogWrite(ENA, velCurva);
+}
+
+void loop() {
+  der = leerDistancia(TRIG_DER, ECHO_DER);
+  delay(50);
+  
+  izq = leerDistancia(TRIG_IZQ, ECHO_IZQ);
+  delay(50);
+
+  Serial.print("Der: "); Serial.print(der);
+  Serial.print(" cm | Izq: "); Serial.print(izq);
+  Serial.println(" cm");
+
+  // Si detecta espacio a IZQUIERDA y está cercano a DERECHA -> gira IZQUIERDA
+  if (izq > UMBRAL_GIRO && der < UMBRAL_GIRO) {
+    girarIzquierda();
+    Serial.println(">>> Giro IZQUIERDA (Espacio libre)");
+  }
+  // Si detecta espacio a DERECHA y está cercano a IZQUIERDA -> gira DERECHA
+  else if (der > UMBRAL_GIRO && izq < UMBRAL_GIRO) {
+    girarDerecha();
+    Serial.println(">>> Giro DERECHA (Espacio libre)");
+  }
+  // Ambos lados libres o ambos cerrados -> recto
+  else {
+    irRecto();
+    Serial.println("✓ Recto");
+  }
+  
+  delay(60);
+}
